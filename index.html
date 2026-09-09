@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalshi Gold Scalper</title>
+    <style>
+        :root { 
+            --bg: #0d1117; --card: #161b22; --border: #30363d; 
+            --text: #c9d1d9; --muted: #8b949e; --gold: #f2ca30; --alert: #f85149; 
+        }
+        body { 
+            background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; 
+        }
+        .terminal { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px; 
+            width: 100%; max-width: 420px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
+        }
+        .badge { 
+            display: block; text-align: center; padding: 10px; border-radius: 20px; 
+            font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; 
+        }
+        .std { background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.3); }
+        .trig { background: rgba(248,81,73,0.2); color: var(--alert); border: 1px solid var(--alert); animation: p 1s infinite; }
+        @keyframes p { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .row { display: flex; align-items: center; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; }
+        .lbl { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; width: 100%; font-weight: 600; }
+        .inp { 
+            flex: 1; background: none; border: none; color: #fff; text-align: right; 
+            padding-right: 12px; font-size: 1.15rem; font-weight: 600; font-family: monospace; height: 44px; 
+        }
+        .inp:focus { outline: none; background-color: #1f242c; }
+        .inp:disabled { color: var(--muted); background: rgba(0,0,0,0.2); cursor: not-allowed; }
+        .btn { flex: 1; background: #21262d; color: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn:hover { background: #30363d; }
+        
+        .inject-btn {
+            background: #21262d; border: 1px solid var(--border); color: #fff;
+            padding: 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;
+            cursor: pointer; flex: 1; text-align: center; font-family: monospace;
+        }
+        .inject-btn:hover { background: #30363d; border-color: #8b949e; }
+    </style>
+</head>
+<body>
+<div class="terminal">
+    <div style="text-align:center;margin-bottom:15px;">
+        <h1 style="font-size:1.25rem;margin:0;">Automated Kalshi Gold Scalper</h1>
+        <h2 style="font-size:0.9rem;color:var(--gold);margin:4px 0 0 0;">🏆 KXGOLD15M Scalp Terminal</h2>
+    </div>
+    <div id="status" class="badge std">● Standby WAITING FOR WINDOW</div>
+    
+    <div class="lbl" style="margin-bottom: 6px;">⚡ Instantly Inject Active App Metrics:</div>
+    <div style="display: flex; gap: 6px; margin-bottom: 18px;">
+        <button class="inject-btn" style="color: #ff7b72;" onclick="injectLiveState(-6.50)">📉 Drop (-6.50)</button>
+        <button class="inject-btn" style="color: #58a6ff;" onclick="injectLiveState(0.57)">📊 Base (+0.57)</button>
+        <button class="inject-btn" style="color: #56d364;" onclick="injectLiveState(1.48)">📈 Spike (+1.48)</button>
+    </div>
+    <div>
+        <label class="lbl">✍️ Live Spot Price ($)</label>
+        <div class="row"><input type="number" id="spot" class="inp" step="0.01" value="4416.10" oninput="manualUpdate()"></div>
+        
+        <label class="lbl">✍️ Target Strike ($)</label>
+        <div class="row"><input type="number" id="strike" class="inp" step="0.01" value="4415.53" oninput="manualUpdate()"></div>
+        
+        <label class="lbl">⏱️ Target Window Range (1-15 min)</label>
+        <div class="row"><input type="number" id="window" class="inp" step="1" min="1" max="15" value="5" oninput="manualUpdate()"></div>
+        
+        <label class="lbl"><span>⚙️ Trigger Floor (%)</span><label style="color:var(--gold);cursor:pointer;"><input type="checkbox" id="lock" checked onchange="tl(this.checked)"> 🔒 Lock</label></label>
+        <div class="row"><input type="number" id="floor" class="inp" value="86" disabled oninput="manualUpdate()"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin:15px 0;">
+        <div id="up" style="flex:1;text-align:center;padding:12px;border-radius:24px;font-weight:800;background:rgba(46,160,67,0.1);color:#56d364;border:1px solid rgba(46,160,67,0.3);font-size:1.1rem;">Up · --%</div>
+        <div id="down" style="flex:1;text-align:center;padding:12px;border-radius:24px;font-weight:800;background:rgba(248,81,73,0.1);color:#ff7b72;border:1px solid rgba(248,81,73,0.3);font-size:1.1rem;">Down · --%</div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:15px;">
+        <button id="mute" onclick="ta()" class="btn" style="color:#ff7b72;">🔇 Audio Alert: MUTED</button>
+        <button onclick="fetchLivePrice()" class="btn" style="background:#2ea043;border-color:rgba(46,160,67,0.4);">🔄 Force Sync Math</button>
+    </div>
+    
+    <div id="notice" style="font-size:0.75rem;color:#58a6ff;text-align:center;font-style:italic;margin-bottom:10px;">🟢 Live UI Calculator Ready</div>
+    <div style="display:flex;justify-content:space-between;font-size:0.85rem;border-top:1px solid var(--border);padding-top:10px;">
+        <span>⏱ Auto Time Left:</span><span id="clock" style="font-weight:bold;margin-left:auto;color:var(--gold);font-family:monospace;">05:00</span>
+    </div>
+</div>
+<script>
+    let d = { spot: 4416.10, strike: 4415.53, floor: 86, window: 5, up: 61, secs: 300, muted: true };
+    let actx = null, timerInterval = null, priceInterval = null;
+
+    async function fetchLivePrice() {
+        try {
+            const res = await fetch("https://coinbase.com");
+            if (!res.ok) throw new Error("API Throttle");
+            const data = await res.json();
+            
+            const livePrice = parseFloat(data.price);
+            if(livePrice) {
+                d.spot = livePrice;
+                document.getElementById('spot').value = livePrice.toFixed(2);
+                document.getElementById('notice').innerText = `🟢 Live Sync: Coinbase $${livePrice.toFixed(2)}`;
+                calc();
+            }
+        } catch (e) {
+            document.getElementById('notice').innerText = `⚠️ Price Stale (Retrying...)`;
+        }
+    }
+
+    function injectLiveState(offsetPrice) {
+        let calculatedStrike = d.spot - offsetPrice;
+        document.getElementById('strike').value = calculatedStrike.toFixed(2);
+        d.strike = calculatedStrike;
+        document.getElementById('notice').innerText = `⚡ Dynamic Sync: Spot $${d.spot.toFixed(2)} | Strike $${calculatedStrike.toFixed(2)}`;
+        calc();
+    }
+
+    function manualUpdate() {
+        d.spot = parseFloat(document.getElementById('spot').value) || 0;
+        d.strike = parseFloat(document.getElementById('strike').value) || 0;
+        d.floor = parseFloat(document.getElementById('floor').value) || 86;
+        
+        let newWindow = parseInt(document.getElementById('window').value) || 5;
+        if (newWindow !== d.window) {
+            d.window = newWindow;
+            d.secs = d.window * 60;
+        }
+        calc();
+    }
+
+    function beep() {
+        if (d.muted) return;
+        try {
+            if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+            let o = actx.createOscillator(), g = actx.createGain();
+            o.type = "sine"; o.frequency.setValueAtTime(880, actx.currentTime);
+            g.gain.setValueAtTime(0.15, actx.currentTime);
+            o.connect(g); g.connect(actx.destination); o.start();
+            g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.15);
+            o.stop(actx.currentTime + 0.16);
+        } catch (e) {}
+    }
+
+    function ta() {
+        d.muted = !d.muted; const b = document.getElementById('mute');
+        b.innerText = d.muted ? "🔇 Audio Alert: MUTED" : "🔊 Audio Alert: LIVE";
+        b.style.color = d.muted ? "#ff7b72" : "#56d364";
+        if (!d.muted && !actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function tl(l) { document.getElementById('floor').disabled = l; }
+
+    function calc() {
+        let diff = d.spot - d.strike;
+        if (diff > 1) d.up = 92;
+        else if (diff > 0) d.up = 61;
+        else d.up = 1;
+
+        let downPercent = 100 - d.up;
+
+        document.getElementById('up').innerText = `Up · ${d.up}%`;
+        document.getElementById('down').innerText = `Down · ${downPercent}%`;
+
+        let statusEl = document.getElementById('status');
+        if (d.up >= d.floor) {
+            statusEl.className = "badge trig";
+            statusEl.innerText = `🚨 SCALP TRIGGERED (${d.up}% >= ${d.floor}%)`;
+            beep();
+        } else {
+            statusEl.className = "badge std";
+            statusEl.innerText = "● Standby WAITING FOR WINDOW";
+        }
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (d.secs <= 0) {
+                d.secs = d.window * 60; 
+            } else {
+                d.secs--;
+            }
+            let m = Math.floor(d.secs / 60).toString().padStart(2, '0');
+            let s = (d.secs % 60).toString().padStart(2, '0');
+            document.getElementById('clock').innerText = `${m}:${s}`;
+        }, 1000);
+    }
+
+    window.onload = function() {
+        fetchLivePrice();
+        startTimer();
+        priceInterval = setInterval(fetchLivePrice, 5000);
+    };
+</script>
+</body>
+</html>
